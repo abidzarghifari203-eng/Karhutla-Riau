@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebGIS Karhutla Riau</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--ink:#1d261f;--green:#12301f;--green2:#1f4d33;--paper:#f2f3ee;--card:#fff;--line:#dfe2d9;--muted:#5a6157;--accent:#d2452b;--focus:#2563eb}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--paper)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+header{flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 18px;background:linear-gradient(100deg,var(--green),var(--green2));color:#fff}
+header h1{margin:0;font-size:17px;letter-spacing:.01em;line-height:1.25}
+header p{margin:2px 0 0;font-size:12px;color:#c9d8cd}
+#dataNote{font-size:12px;color:#dbe7de;text-align:right;white-space:nowrap}
+#dataNote b{color:#fff}
+#app{flex:1;min-height:0;display:flex}
+aside{flex:none;width:410px;overflow:auto;padding:12px;background:var(--paper);border-right:1px solid var(--line)}
+#mapwrap{position:relative;flex:1;min-width:0}
+#map{position:absolute;inset:0;background:#dfe5e0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin:0 0 12px;box-shadow:0 1px 2px rgba(20,40,25,.05)}
+.card h2{margin:0 0 9px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green2)}
+.card h3{margin:12px 0 4px;font-size:13px;font-weight:650}
+.hint{font-size:12px;color:var(--muted);margin:4px 0 0}
+label{display:block;font-size:12px;font-weight:600;color:#3d443a;margin:0 0 3px}
+select{width:100%;min-height:38px;padding:6px 9px;border:1px solid #c5c9bd;border-radius:8px;background:#fff;cursor:pointer}
+select:hover{border-color:#8b9384}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.field{margin-bottom:9px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:36px;padding:6px 12px;border:1px solid #c5c9bd;border-radius:999px;background:#fff;cursor:pointer;font-size:13px;font-weight:550;transition:background .12s,border-color .12s}
+.chip:hover{background:#eef3ee;border-color:#7f9a87}
+.chip[aria-pressed=true]{background:var(--green2);border-color:var(--green2);color:#fff}
+.btn{min-height:38px;padding:7px 12px;border-radius:8px;border:1px solid var(--green2);background:var(--green2);color:#fff;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--green)}
+.btn.ghost{background:#fff;color:var(--green2)}
+.btn.ghost:hover{background:#eef3ee}
+.btnrow{display:flex;gap:8px;margin-top:6px}.btnrow .btn{flex:1}
+.switch{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:13px;font-weight:550;cursor:pointer}
+.switch input{width:18px;height:18px;accent-color:var(--green2);cursor:pointer}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:#10243e;border:2px solid #fff;box-shadow:0 0 0 1px #10243e66}
+.line{display:inline-block;width:18px;height:0;border-top:2px solid #172d20}
+.sliderrow{display:flex;align-items:center;gap:10px}
+.sliderrow input[type=range]{flex:1;accent-color:var(--accent);height:28px;cursor:pointer}
+#monthLabel{min-width:104px;text-align:right;font-weight:700}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kpi{padding:10px 11px;border-radius:10px;background:#f7f8f4;border:1px solid #e6e9df}
+.kpi b{display:block;font-size:22px;line-height:1.15;color:var(--green)}
+.kpi span{display:block;font-size:12px;color:var(--muted);line-height:1.3;margin-top:2px}
+.chartbox{position:relative;margin:4px 0 6px}
+.cb-year{height:215px}.cb-month{height:175px}.cb-kab{height:300px}.cb-cell{height:150px}
+.note{font-size:12.5px;color:#4a5147}
+.note p{margin:6px 0}
+details summary{cursor:pointer;font-weight:650;color:var(--green2)}
+.bars{display:grid;gap:4px;margin-top:8px}
+.bar{display:grid;grid-template-columns:128px 1fr 40px;align-items:center;gap:7px;font-size:12px}
+.bar .tr{position:relative;height:9px;background:#eceee7;border-radius:5px;overflow:hidden}
+.bar .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.bar .tr:after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#0006}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:650;color:#fff}
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:8px 0}
+.dgrid div{padding:7px 9px;border:1px solid #e6e9df;border-radius:8px;background:#f9faf6;font-size:12px;color:var(--muted)}
+.dgrid b{display:block;font-size:14px;color:var(--ink)}
+.empty{padding:14px;text-align:center;color:var(--muted);border:1px dashed #c9cdc2;border-radius:10px;font-size:13px}
+.err{padding:10px;border-radius:9px;background:#fff2ef;border:1px solid #f1c7bd;color:#8a2a1c;font-size:12.5px}
+/* overlay peta */
+.maptitle{position:absolute;z-index:500;top:10px;left:54px;right:64px;max-width:560px;padding:8px 13px;border-radius:10px;background:#ffffffee;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none}
+.maptitle b{display:block;font-size:14px}
+.maptitle span{display:block;font-size:12px;color:var(--muted)}
+.legendbox{position:absolute;z-index:500;right:10px;bottom:28px;width:236px;max-height:62%;overflow:auto;padding:9px 10px;border-radius:12px;background:#fffffff2;border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.legendbox h4{margin:0 0 5px;font-size:12.5px}
+.lrow{display:flex;align-items:center;gap:8px;width:100%;min-height:30px;padding:3px 6px;margin:1px 0;border:0;border-radius:7px;background:transparent;cursor:pointer;text-align:left;font-size:12.5px}
+.lrow:hover{background:#eef3ee}
+.lrow .sw{flex:none;width:22px;height:15px;border-radius:4px;border:1px solid #0003}
+.lrow .lt{flex:1}
+.lrow .ct{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lrow[aria-pressed=false]{opacity:.42}
+.lrow[aria-pressed=false] .lt{text-decoration:line-through}
+.legendbox .small{font-size:11.5px;color:var(--muted);margin:4px 2px 0}
+.firenote{position:absolute;z-index:500;left:10px;bottom:28px;max-width:300px;padding:6px 10px;border-radius:8px;background:#fffffff0;border:1px solid var(--line);font-size:12px;color:#4a5147;display:none}
+#loading{position:absolute;inset:0;z-index:1000;display:grid;place-items:center;text-align:center;padding:24px;background:#f2f3eef2}
+.spin{width:34px;height:34px;margin:0 auto 12px;border:4px solid #cfd6cb;border-top-color:var(--green2);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.leaflet-popup-content{margin:12px 14px;min-width:215px;font-size:13px}
+.leaflet-popup-content h4{margin:0 0 5px;font-size:14px}
+.leaflet-popup-content table{width:100%;border-collapse:collapse}
+.leaflet-popup-content td{padding:3px 2px;border-bottom:1px solid #eee}
+.leaflet-popup-content td:last-child{text-align:right;font-weight:650}
+.leaflet-tooltip{font-size:12.5px;line-height:1.4;padding:6px 9px;border-radius:8px}
+@media(max-width:860px){
+ body{height:auto;min-height:100%}html,body{height:auto}
+ #app{flex-direction:column}
+ #mapwrap{order:-1;flex:none;height:64vh;min-height:360px}
+ aside{width:100%;overflow:visible;border-right:0;border-top:1px solid var(--line)}
+ header{flex-direction:column;align-items:flex-start;gap:4px}#dataNote{text-align:left;white-space:normal}
+ .maptitle{right:10px;top:10px;left:54px;padding:6px 10px}
+ .legendbox{width:176px;max-height:44%;bottom:24px;padding:7px}
+ .lrow{min-height:28px;font-size:12px}
+ .firenote{bottom:auto;top:78px;left:10px}
+ .bar{grid-template-columns:104px 1fr 38px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>WebGIS Pemantauan Kebakaran Hutan dan Lahan · Provinsi Riau</h1><p>Monitoring titik api, kerentanan, bahaya bulanan, dan Drought Code</p></div>
+  <div id="dataNote">Memuat data…</div>
+</header>
+<div id="app">
+<aside aria-label="Panel kontrol">
+
+<section class="card" aria-labelledby="h-layer">
+  <h2 id="h-layer">1 · Pilih layer peta</h2>
+  <div class="chips" id="modeChips"></div>
+  <p class="hint" id="modeDesc"></p>
+  <div id="hazBox" hidden>
+    <h3>Bulan <span id="hazYearTxt">2026</span></h3>
+    <div class="sliderrow">
+      <button class="btn ghost" id="playBtn" type="button" style="min-width:86px">▶ Putar</button>
+      <input type="range" id="hazSlider" min="1" max="9" step="1" value="1" aria-label="Pilih bulan">
+      <span id="monthLabel">Januari</span>
+    </div>
+  </div>
+  <div id="frBox" hidden class="field" style="margin-top:10px"><label for="frSel">Parameter FR</label><select id="frSel"></select></div>
+</section>
+
+<section class="card" aria-labelledby="h-filter">
+  <h2 id="h-filter">2 · Filter wilayah &amp; titik api</h2>
+  <div class="field"><label for="kabSel">Kabupaten/kota</label><select id="kabSel"><option value="">Semua wilayah</option></select></div>
+  <div class="two">
+    <div class="field"><label for="yearSel">Tahun titik api</label><select id="yearSel"><option value="">Semua tahun</option></select></div>
+    <div class="field"><label for="monthSel">Bulan titik api</label><select id="monthSel"><option value="">Semua bulan</option></select></div>
+  </div>
+  <label style="margin-top:2px">Tingkat kepercayaan titik api</label>
+  <div class="chips" id="confChips"></div>
+  <label class="switch"><input type="checkbox" id="fireChk" checked><span class="dot"></span> Tampilkan titik api</label>
+  <label class="switch"><input type="checkbox" id="kabChk" checked><span class="line"></span> Tampilkan batas kabupaten/kota</label>
+  <div class="btnrow"><button class="btn ghost" id="reset" type="button">Reset filter</button><button class="btn" id="fit" type="button">Zoom ke wilayah</button></div>
+</section>
+
+<section class="card" aria-labelledby="h-kpi">
+  <h2 id="h-kpi">3 · Ringkasan (mengikuti filter)</h2>
+  <div class="kpis">
+    <div class="kpi"><b id="kFire">–</b><span>Titik api sesuai filter</span></div>
+    <div class="kpi"><b id="kBurn">–</b><span>Sel pernah terbakar (MODIS 2014–2026)</span></div>
+    <div class="kpi"><b id="kVul">–</b><span>Sel kerentanan tinggi (kelas 4–5)</span></div>
+    <div class="kpi"><b id="kHigh">–</b><span id="kHighL">Sel bahaya tinggi (kelas 4–5)</span></div>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h-chart">
+  <h2 id="h-chart">4 · Grafik titik api</h2>
+  <p class="hint" style="margin:-2px 0 6px">Klik batang untuk memfilter tahun, bulan, atau kabupaten. Klik lagi untuk melepas.</p>
+  <h3 style="margin-top:4px">Per tahun &amp; anomali ENSO</h3>
+  <div class="chartbox cb-year"><canvas id="yearChart" aria-label="Grafik titik api per tahun"></canvas></div>
+  <h3 id="monthTitle">Per bulan</h3>
+  <div class="chartbox cb-month"><canvas id="monthChart" aria-label="Grafik titik api per bulan"></canvas></div>
+  <h3>Per kabupaten/kota</h3>
+  <div class="chartbox cb-kab"><canvas id="kabChart" aria-label="Grafik titik api per kabupaten"></canvas></div>
+</section>
+
+<section class="card" aria-labelledby="h-detail">
+  <h2 id="h-detail">5 · Detail sel grid</h2>
+  <div id="detail"><div class="empty">Klik salah satu sel grid di peta untuk melihat detailnya.</div></div>
+</section>
+
+<section class="card note">
+  <details>
+    <summary>Catatan data &amp; sumber</summary>
+    <p><b>Grid:</b> 3.920 sel 5 × 5 km. Kerentanan (kelas 1–5) dan nilai FR dari analisis sebelumnya.</p>
+    <p><b>Bahaya bulanan &amp; Drought Code:</b> raster hasil reklasifikasi, Januari–September 2026. Oktober belum tersedia. Sel yang berada di luar cakupan raster ditampilkan abu-abu (tanpa data).</p>
+    <p><b>Riwayat terbakar:</b> dihitung dari raster MODIS Burned Area 2014–2026 (500 m): persentase piksel terbakar di tiap sel dan tahun terbakar terakhir.</p>
+    <p><b>Titik api:</b> sebaran hotspot Riau 2014–2026 (MODIS, NOAA-20, NOAA-21) per kabupaten, kecamatan, dan desa. Tiap titik dihubungkan ke sel grid tempat ia jatuh.</p>
+    <p><b>ENSO:</b> anomali ONI NOAA, rata-rata musim JAS dan ASO tiap tahun.</p>
+    <p>Layer populasi tidak ditampilkan karena datanya belum tersedia.</p>
+  </details>
+</section>
+</aside>
+
+<main id="mapwrap">
+  <div id="map" role="region" aria-label="Peta interaktif"></div>
+  <div class="maptitle" id="mapTitle"><b>–</b><span></span></div>
+  <div class="legendbox" id="legendBox"></div>
+  <div class="firenote" id="fireNote"></div>
+  <div id="loading"><div><div class="spin"></div><b>Memuat grid, batas wilayah, dan titik api…</b></div></div>
+</main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+'use strict';
+/* ===== Konfigurasi ===== */
+const FILES={grid:'data/grid.geojson',kab:'data/kab.geojson',fire:'data/titik_api.json',enso:'data/enso.json'};
+const NHAZ=9; // Januari–September
+const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const MS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const CLS=['Sangat rendah','Rendah','Sedang','Tinggi','Sangat tinggi'];
+const PAL=['#ffefb0','#fdbf6f','#f46d43','#d73027','#7f0000'];
+const FRPAL=['#2166ac','#93b7d6','#f2f2f2','#f0a77a','#e66101'];
+const NEUTRAL='#c4c8bc';
+const FR=[['fr_tutup','Tutupan lahan'],['fr_ubah','Perubahan tutupan lahan'],['fr_ndmi','NDMI'],['fr_gambut','Gambut'],['fr_feg','FEG'],['fr_kanal','Kanal'],['fr_soc','SOC'],['fr_jalan','Jarak jalan'],['fr_sungai','Jarak sungai'],['fr_mukim','Jarak permukiman'],['fr_slope','Kemiringan lereng'],['fr_elev','Elevasi']];
+const MODES=[
+ ['rentan','Kerentanan','Kelas kerentanan 1–5 dari analisis Frequency Ratio (FR). Makin tinggi, makin rentan terbakar.'],
+ ['bahaya','Bahaya bulanan','Kelas bahaya kebakaran per bulan (2026). Geser bulan atau tekan Putar untuk melihat perubahannya.'],
+ ['dc','Drought Code','Kelas Drought Code per bulan (2026) hasil reklasifikasi. Diasumsikan makin tinggi kelas, makin kering.'],
+ ['burn','Riwayat terbakar','Persentase luas sel yang pernah terbakar pada 2014–2026 menurut MODIS Burned Area.'],
+ ['dens','Kepadatan titik api','Jumlah titik api per sel grid, mengikuti filter tahun, bulan, kabupaten, dan kepercayaan.'],
+ ['fr','Parameter FR','Nilai Frequency Ratio tiap parameter. Di atas 1 berarti parameter itu meningkatkan peluang terbakar.']
+];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'–').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>v===null||v===undefined||v===''||!Number.isFinite(+v)?null:+v;
+const fmt=(v,d=0)=>num(v)===null?'–':(+v).toLocaleString('id-ID',{maximumFractionDigits:d,minimumFractionDigits:d});
+const pad=x=>String(x).padStart(2,'0');
+
+/* ===== State ===== */
+const state={mode:'rentan',hm:1,year:'',month:'',kab:'',fr:FR[0][0]};
+const confOn=[true,true,true];
+let showFire=true,G=[],T=null,ENSO={},selG=null,off=new Set(),LEG=[],LEGC={},dBreaks=[],counts=null,fc=null,fireKey='',activeIdx=[],playTimer=null;
+let gridLayer,adminLayer,fireGroup,cellChart,yearChart,monthChart,kabChart,gIdx=new Map();
+
+/* ===== Peta ===== */
+const R=L.canvas({padding:.4,tolerance:5});
+const map=L.map('map',{renderer:R,zoomSnap:.25,minZoom:6}).setView([0.55,101.9],7.5);
+const base={
+ 'Peta terang':L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}),
+ 'OpenStreetMap':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}),
+ 'Citra satelit':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles &copy; Esri'})
+};
+base['Peta terang'].addTo(map);
+L.control.layers(base,null,{position:'topright',collapsed:true}).addTo(map);
+L.control.scale({imperial:false,position:'bottomleft'}).addTo(map);
+fireGroup=L.layerGroup().addTo(map);
+
+/* ===== Helper data ===== */
+const inKab=p=>!state.kab||p.kab===state.kab;
+const hz=p=>num(p['bhy_'+pad(state.hm)]);
+const dcv=p=>num(p['dc_'+pad(state.hm)]);
+const frv=(p,k)=>num(p[k]);
+function frKey(v){return v===null?'nd':v<.8?0:v<.95?1:v<1.05?2:v<1.2?3:4}
+function burnKey(p){const b=num(p.bk);return b===null?'nd':b<=0?'n':b<=5?0:b<=20?1:b<=50?2:b<=80?3:4}
+function densKey(i){const c=counts[i];if(!c)return 'n';let k=dBreaks.findIndex(b=>c<=b);return k<0?dBreaks.length:k}
+function cellKey(p,i){
+  switch(state.mode){
+    case 'rentan':{const v=num(p.rentan);return v>=1&&v<=5?v-1:'nd'}
+    case 'bahaya':{const v=hz(p);return v>=1&&v<=5?v-1:'nd'}
+    case 'dc':{const v=dcv(p);return v>=1&&v<=5?v-1:'nd'}
+    case 'burn':return burnKey(p);
+    case 'dens':return densKey(i);
+    default:return frKey(frv(p,state.fr));
+  }
+}
+function legendDef(){
+  const m=state.mode,nd={key:'nd',color:NEUTRAL,label:'Tanpa data'};
+  if(m==='rentan')return{title:'Kerentanan',items:PAL.map((c,k)=>({key:k,color:c,label:(k+1)+' · '+CLS[k]}))};
+  if(m==='bahaya')return{title:'Bahaya · '+MONTHS[state.hm-1]+' 2026',items:[...PAL.map((c,k)=>({key:k,color:c,label:(k+1)+' · '+CLS[k]})),nd]};
+  if(m==='dc')return{title:'Drought Code · '+MONTHS[state.hm-1]+' 2026',items:[...PAL.map((c,k)=>({key:k,color:c,label:'Kelas '+(k+1)})),nd]};
+  if(m==='burn'){const lb=['≤ 5 %','5–20 %','20–50 %','50–80 %','> 80 %'];return{title:'Luas sel yang pernah terbakar',items:[{key:'n',color:'#eceee6',label:'Tidak terbakar'},...PAL.map((c,k)=>({key:k,color:c,label:lb[k]})),nd]}}
+  if(m==='dens'){
+    const items=[{key:'n',color:'#eceee6',label:'Tidak ada titik'}],nb=dBreaks.length;
+    if(!nb){const mx=Math.max(...counts);if(mx>0)items.push({key:0,color:PAL[2],label:(mx===1?'1':'1–'+mx)+' titik'});return{title:'Titik api per sel',items}}
+    for(let k=0;k<=nb;k++){const col=PAL[nb?Math.round(k*4/nb):2];const lo=k?dBreaks[k-1]+1:1;const label=k===nb?'> '+dBreaks[nb-1]:(lo===dBreaks[k]?String(lo):lo+'–'+dBreaks[k]);items.push({key:k,color:col,label:label+' titik'})}
+    return{title:'Titik api per sel',items}}
+  return{title:'FR · '+(FR.find(x=>x[0]===state.fr)||[])[1],items:[...[['< 0,80'],['0,80–0,95'],['0,95–1,05'],['1,05–1,20'],['> 1,20']].map((l,k)=>({key:k,color:FRPAL[k],label:l[0]})),{key:'nd',color:NEUTRAL,label:'Tanpa nilai'}]};
+}
+function keyLabel(key){const it=LEG.find(x=>x.key===key);return it?it.label:'–'}
+function modeValueText(p,i){
+  const k=cellKey(p,i),m=state.mode;
+  if(k==='nd')return 'Tanpa data';
+  if(m==='rentan'||m==='bahaya')return 'Kelas '+(k+1)+' ('+CLS[k]+')';
+  if(m==='dc')return 'Kelas '+(k+1);
+  if(m==='burn')return k==='n'?'Tidak terbakar':fmt(p.bk,1)+' % terbakar';
+  if(m==='dens')return fmt(counts[i])+' titik api';
+  return fmt(frv(p,state.fr),2);
+}
+const modeName=()=>MODES.find(x=>x[0]===state.mode)[1];
+
+/* ===== Titik api ===== */
+function fireIdx(skip){
+  const out=[],ky=state.kab?T.kab.indexOf(state.kab):-1,yr=+state.year||0,mo=+state.month||0;
+  for(let i=0;i<T.n;i++){
+    if(!confOn[T.c[i]])continue;
+    if(!skip.includes('year')&&yr&&T.th[i]!==yr)continue;
+    if(!skip.includes('month')&&mo&&T.bl[i]!==mo)continue;
+    if(!skip.includes('kab')&&ky>=0&&T.k[i]!==ky)continue;
+    out.push(i);
+  }
+  return out;
+}
+function firePopup(i){
+  return '<h4>Titik api</h4><table>'+[['Tanggal',T.hr[i]+' '+MONTHS[T.bl[i]-1]+' '+T.th[i]],['Kabupaten/kota',T.kab[T.k[i]]],['Kecamatan',T.kec[T.kc[i]]],['Desa',T.desa[T.ds[i]]],['Satelit',T.sat[T.s[i]]],['Kepercayaan',T.conf[T.c[i]]]].map(r=>'<tr><td>'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</table>';
+}
+function drawFires(){
+  fireGroup.clearLayers();
+  const note=$('fireNote');note.style.display='none';
+  if(!T||!showFire)return;
+  const cap=18000,step=activeIdx.length>cap?Math.ceil(activeIdx.length/cap):1;
+  for(let n=0;n<activeIdx.length;n+=step){
+    const i=activeIdx[n];
+    const m=L.circleMarker([T.y[i],T.x[i]],{renderer:R,radius:T.c[i]===2?4.5:3.5,color:'#fff',weight:.9,fillColor:'#10243e',fillOpacity:.92});
+    m.on('click',e=>{L.popup({closeButton:true}).setLatLng(e.latlng).setContent(firePopup(i)).openOn(map)});
+    fireGroup.addLayer(m);
+  }
+  if(step>1){note.textContent='Peta menampilkan sampel '+fmt(Math.ceil(activeIdx.length/step))+' dari '+fmt(activeIdx.length)+' titik agar tetap lancar. Pilih satu tahun untuk melihat semua titik.';note.style.display='block'}
+}
+
+/* ===== Grid ===== */
+function gridStyle(f){
+  const p=f.properties,key=cellKey(p,f._i),inR=inKab(p),sel=p.g===selG,hidden=off.has(key);
+  const col=LEGC[key]||NEUTRAL,neutral=key==='nd'||key==='n';
+  let fo=hidden?0:(inR?(neutral?.4:.86):.07);
+  if(!inR&&!hidden)fo=.06;
+  return{color:sel?'#0b0b0b':'#fff',weight:sel?2.6:.4,opacity:sel?1:(inR&&!hidden?.65:0),fillColor:col,fillOpacity:fo};
+}
+function cellTip(f){
+  const p=f.properties;
+  return '<b>Sel '+esc(p.g)+' · '+esc(p.kab)+'</b><br>'+esc(modeName())+': '+esc(modeValueText(p,f._i))+'<br><span style="color:#6a7166">Klik untuk detail</span>';
+}
+function cellFireCount(i,all){let n=0;if(!T)return 0;if(all){for(let j=0;j<T.n;j++)if(fc[j]===i)n++}else for(const j of activeIdx)if(fc[j]===i)n++;return n}
+function cellHtmlRows(f){
+  const p=f.properties,k=num(p.rentan),h=hz(p),d=dcv(p);
+  return [['Kerentanan',k?'Kelas '+k+' ('+CLS[k-1]+')':'–'],['Bahaya '+MONTHS[state.hm-1],h?'Kelas '+h+' ('+CLS[h-1]+')':'–'],['Drought Code '+MS[state.hm-1],d?'Kelas '+d:'–'],['Luas pernah terbakar',num(p.bk)===null?'–':fmt(p.bk,1)+' %'],['Terbakar terakhir',p.by||'–'],['Titik api (filter)',fmt(cellFireCount(f._i,false))]];
+}
+function onCellClick(e){
+  const f=e.target.feature;
+  selG=f.properties.g;
+  gridLayer.eachLayer(l=>l.setStyle(gridStyle(l.feature)));
+  const rows=cellHtmlRows(f);
+  L.popup().setLatLng(e.latlng).setContent('<h4>Sel '+esc(f.properties.g)+' · '+esc(f.properties.kab)+'</h4><table>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</table><p style="margin:6px 0 0;font-size:12px;color:#5a6157">Rincian lengkap ada di panel &ldquo;Detail sel grid&rdquo;.</p>').openOn(map);
+  showCell(f);
+}
+function frColor(v){return v<.8?FRPAL[0]:v<.95?FRPAL[1]:v<1.05?FRPAL[2]:v<1.2?FRPAL[3]:FRPAL[4]}
+function showCell(f){
+  const p=f.properties,k=num(p.rentan),box=$('detail');
+  const bars=FR.map(([key,label])=>{const v=frv(p,key);return '<div class="bar"><span>'+esc(label)+'</span><span class="tr">'+(v===null?'':'<i style="width:'+Math.max(2,Math.min(100,(v-.5)/1*100))+'%;background:'+frColor(v)+'"></i>')+'</span><span>'+(v===null?'–':fmt(v,2))+'</span></div>'}).join('');
+  box.innerHTML='<b style="font-size:15px">Sel '+esc(p.g)+' · '+esc(p.kab)+'</b>'+
+   '<div style="margin:7px 0"><span class="pill" style="background:'+(k?PAL[k-1]:NEUTRAL)+';color:'+(k&&k<3?'#3d2a00':'#fff')+'">Kerentanan '+(k?k+' · '+CLS[k-1]:'–')+'</span></div>'+
+   '<div class="dgrid"><div>Indeks FR<b>'+fmt(p.indeks,2)+'</b></div><div>Luas pernah terbakar<b>'+(num(p.bk)===null?'–':fmt(p.bk,1)+' %')+'</b></div><div>Terbakar terakhir<b>'+esc(p.by||'–')+'</b></div><div>Titik api<b>'+fmt(cellFireCount(f._i,false))+' (filter) · '+fmt(cellFireCount(f._i,true))+' (total)</b></div></div>'+
+   '<h3>Bahaya &amp; Drought Code Januari–September 2026</h3><div class="chartbox cb-cell"><canvas id="cellChart"></canvas></div>'+
+   '<h3>Nilai FR per parameter <span style="font-weight:400;color:#5a6157">(garis tengah = 1,0)</span></h3><div class="bars">'+bars+'</div>';
+  const hzv=[],dcs=[];for(let m=1;m<=NHAZ;m++){hzv.push(num(p['bhy_'+pad(m)]));dcs.push(num(p['dc_'+pad(m)]))}
+  if(cellChart)cellChart.destroy();
+  cellChart=new Chart($('cellChart'),{type:'line',data:{labels:MS.slice(0,NHAZ),datasets:[{label:'Bahaya',data:hzv,borderColor:'#d73027',backgroundColor:'#d73027',tension:.2,pointRadius:3},{label:'Drought Code',data:dcs,borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.2,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,spanGaps:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:11}},title:{display:true,text:'Kelas',font:{size:11}}},x:{ticks:{font:{size:11}}}}}});
+  if(innerWidth>860)box.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+
+/* ===== Legend overlay ===== */
+function renderLegend(){
+  const def=legendDef();LEG=def.items;LEGC={};LEG.forEach(x=>LEGC[x.key]=x.color);
+  const cnt={};for(const f of G){if(!inKab(f.properties))continue;const k=cellKey(f.properties,f._i);cnt[k]=(cnt[k]||0)+1}
+  let html='<h4>'+esc(def.title)+'</h4>';
+  for(const it of LEG){if(!cnt[it.key]&&(it.key==='nd'))continue;
+    html+='<button type="button" class="lrow" data-key="'+it.key+'" aria-pressed="'+(!off.has(String(it.key))&&!off.has(it.key))+'" title="Klik untuk menampilkan/menyembunyikan kelas ini"><span class="sw" style="background:'+it.color+'"></span><span class="lt">'+esc(it.label)+'</span><span class="ct">'+fmt(cnt[it.key]||0)+'</span></button>'}
+  html+='<p class="small">Klik kelas untuk menampilkan atau menyembunyikannya. Angka = jumlah sel.</p>';
+  $('legendBox').innerHTML=html;
+  $('legendBox').querySelectorAll('.lrow').forEach(b=>b.addEventListener('click',()=>{const raw=b.dataset.key;const key=/^\d+$/.test(raw)?+raw:raw;if(off.has(key))off.delete(key);else off.add(key);refresh()}));
+}
+
+/* ===== KPI & judul ===== */
+function renderKpis(){
+  let burn=0,vul=0,hi=0;
+  for(const f of G){const p=f.properties;if(!inKab(p))continue;if((num(p.bk)||0)>0)burn++;if((num(p.rentan)||0)>=4)vul++;if((hz(p)||0)>=4)hi++}
+  $('kFire').textContent=T?fmt(activeIdx.length):'–';$('kBurn').textContent=fmt(burn);$('kVul').textContent=fmt(vul);$('kHigh').textContent=fmt(hi);
+  $('kHighL').textContent='Sel bahaya tinggi, '+MONTHS[state.hm-1]+' 2026';
+}
+function renderTitle(){
+  const wil=state.kab||'Seluruh Riau';
+  let t=modeName();if(state.mode==='bahaya'||state.mode==='dc')t+=' · '+MONTHS[state.hm-1]+' 2026';
+  let f='';
+  if(T&&showFire)f='Titik api: '+(state.year||'semua tahun')+' · '+(state.month?MONTHS[state.month-1]:'semua bulan')+' · '+fmt(activeIdx.length)+' titik';
+  else f='Titik api disembunyikan';
+  $('mapTitle').innerHTML='<b>'+esc(t)+'</b><span>'+esc(wil)+(T?' · '+esc(f):'')+'</span>';
+}
+
+/* ===== Grafik ===== */
+const CH={responsive:true,maintainAspectRatio:false,animation:false};
+function pointer(e,els){e.native.target.style.cursor=els.length?'pointer':'default'}
+function drawCharts(){
+  if(!T||!window.Chart)return;
+  const years=Array.from({length:13},(_,i)=>2014+i),yc=new Array(13).fill(0),mc=new Array(12).fill(0),kc=new Array(T.kab.length).fill(0);
+  for(const i of fireIdx(['year']))yc[T.th[i]-2014]++;
+  for(const i of fireIdx(['month']))mc[T.bl[i]-1]++;
+  for(const i of fireIdx(['kab']))kc[T.k[i]]++;
+  const sy=+state.year,sm=+state.month;
+  const col=(on,idx,sel)=>on?(idx===sel?'#b42318':'#f0c3b7'):'#d9573b';
+  yearChart.data.datasets[0].data=yc;yearChart.data.datasets[0].backgroundColor=years.map(y=>col(!!sy,y,sy));yearChart.update();
+  monthChart.data.datasets[0].data=mc;monthChart.data.datasets[0].backgroundColor=MS.map((_,i)=>sm?(i+1===sm?'#1f6b3f':'#bcd6c4'):'#3f8a5a');monthChart.update();
+  $('monthTitle').textContent='Per bulan · '+(state.year||'semua tahun');
+  const ord=kc.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]);
+  kabChart.data.labels=ord.map(o=>T.kab[o[1]]);kabChart.data.datasets[0].data=ord.map(o=>o[0]);
+  kabChart.data.datasets[0].backgroundColor=ord.map(o=>state.kab?(T.kab[o[1]]===state.kab?'#7a3b12':'#e2cdb8'):'#b86a2e');kabChart.update();
+}
+function initCharts(){
+  if(!T||!window.Chart)return;
+  Chart.defaults.font.size=11;Chart.defaults.color='#4a5147';
+  const years=Array.from({length:13},(_,i)=>2014+i);
+  yearChart=new Chart($('yearChart'),{data:{labels:years,datasets:[
+    {type:'bar',label:'Titik api',data:[],backgroundColor:'#d9573b',yAxisID:'y',order:2},
+    {type:'line',label:'Anomali ENSO (ONI)',data:years.map(y=>ENSO[y]??null),borderColor:'#2563eb',backgroundColor:'#2563eb',pointRadius:3,tension:.25,yAxisID:'y1',order:1}]},
+    options:{...CH,onHover:pointer,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},
+      scales:{y:{beginAtZero:true,title:{display:true,text:'Titik api'}},y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'ONI (°C)'},ticks:{color:'#2563eb'}},x:{ticks:{maxRotation:0,autoSkip:false,font:{size:10}}}},
+      onClick:(e,els)=>{const el=yearChart.getElementsAtEventForMode(e,'index',{intersect:false},true)[0];if(!el)return;const y=String(years[el.index]);setYear(state.year===y?'':y)}}});
+  monthChart=new Chart($('monthChart'),{type:'bar',data:{labels:MS,datasets:[{data:[],backgroundColor:'#3f8a5a'}]},options:{...CH,onHover:pointer,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{ticks:{font:{size:10}}}},onClick:(e,els)=>{if(!els.length)return;const m=String(els[0].index+1);setMonth(state.month===m?'':m)}}});
+  kabChart=new Chart($('kabChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:'#b86a2e'}]},options:{...CH,indexAxis:'y',onHover:pointer,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{ticks:{font:{size:11}}}},onClick:(e,els)=>{if(!els.length)return;const n=kabChart.data.labels[els[0].index];setKab(state.kab===n?'':n)}}});
+}
+
+/* ===== Refresh ===== */
+function computeDens(){
+  counts=new Int32Array(G.length);
+  for(const i of activeIdx){const c=fc[i];if(c>=0)counts[c]++}
+  const nz=Array.from(counts).filter(v=>v>0).sort((a,b)=>a-b);
+  if(!nz.length){dBreaks=[];return}
+  const q=[.2,.4,.6,.8].map(p=>nz[Math.min(nz.length-1,Math.floor(p*(nz.length-1)))]);
+  dBreaks=[...new Set(q)].filter(v=>v<nz[nz.length-1]).sort((a,b)=>a-b);
+}
+function refresh(){
+  if(!gridLayer)return;
+  activeIdx=T?fireIdx([]):[];
+  if(!counts||state.mode==='dens')computeDens();
+  renderLegend();
+  gridLayer.eachLayer(l=>l.setStyle(gridStyle(l.feature)));
+  const fk=[state.year,state.month,state.kab,confOn.join(),showFire].join('|');
+  if(fk!==fireKey){fireKey=fk;drawFires()}
+  renderKpis();renderTitle();drawCharts();
+  $('hazBox').hidden=!(state.mode==='bahaya'||state.mode==='dc');
+  $('frBox').hidden=state.mode!=='fr';
+  document.querySelectorAll('#modeChips .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===state.mode));
+  $('modeDesc').textContent=MODES.find(x=>x[0]===state.mode)[2];
+  $('monthLabel').textContent=MONTHS[state.hm-1];$('hazSlider').value=state.hm;
+}
+function setYear(v){state.year=v;$('yearSel').value=v;refresh()}
+function setMonth(v){state.month=v;$('monthSel').value=v;refresh()}
+function setKab(v){state.kab=v;$('kabSel').value=v;refresh();fitRegion()}
+function setMode(m){state.mode=m;off=new Set();if(m!=='bahaya'&&m!=='dc')stopPlay();refresh()}
+function fitRegion(){
+  let b=null;
+  if(state.kab&&adminLayer)adminLayer.eachLayer(l=>{if(l.feature.properties.kab===state.kab)b=l.getBounds()});
+  if(!b&&gridLayer)b=gridLayer.getBounds();
+  if(b&&b.isValid())map.fitBounds(b,{padding:[20,20],maxZoom:11});
+}
+function stopPlay(){if(playTimer){clearInterval(playTimer);playTimer=null}$('playBtn').textContent='▶ Putar'}
+function togglePlay(){
+  if(playTimer){stopPlay();return}
+  $('playBtn').textContent='⏸ Jeda';
+  playTimer=setInterval(()=>{state.hm=state.hm>=NHAZ?1:state.hm+1;refresh()},1200);
+}
+
+/* ===== Kontrol UI ===== */
+function buildControls(){
+  const mc=$('modeChips');
+  MODES.forEach(([k,l])=>{const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.mode=k;b.textContent=l;b.setAttribute('aria-pressed',k===state.mode);b.addEventListener('click',()=>setMode(k));mc.appendChild(b)});
+  FR.forEach(([k,l])=>$('frSel').add(new Option(l,k)));
+  MONTHS.forEach((m,i)=>$('monthSel').add(new Option(m,i+1)));
+  ['Rendah','Sedang','Tinggi'].forEach((l,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=l;b.setAttribute('aria-pressed','true');b.addEventListener('click',()=>{confOn[i]=!confOn[i];b.setAttribute('aria-pressed',confOn[i]);if(!confOn.some(Boolean)){confOn[i]=true;b.setAttribute('aria-pressed','true')}refresh()});$('confChips').appendChild(b)});
+  $('frSel').addEventListener('change',e=>{state.fr=e.target.value;off=new Set();refresh()});
+  $('kabSel').addEventListener('change',e=>setKab(e.target.value));
+  $('yearSel').addEventListener('change',e=>setYear(e.target.value));
+  $('monthSel').addEventListener('change',e=>setMonth(e.target.value));
+  $('hazSlider').addEventListener('input',e=>{state.hm=+e.target.value;refresh()});
+  $('playBtn').addEventListener('click',togglePlay);
+  $('fireChk').addEventListener('change',e=>{showFire=e.target.checked;refresh()});
+  $('kabChk').addEventListener('change',e=>{if(!adminLayer)return;e.target.checked?adminLayer.addTo(map):map.removeLayer(adminLayer)});
+  $('fit').addEventListener('click',fitRegion);
+  $('reset').addEventListener('click',()=>{
+    stopPlay();state.mode='rentan';state.hm=1;state.month='';state.kab='';state.fr=FR[0][0];off=new Set();selG=null;
+    state.year=T?String(Math.max(...T.th.slice(-1))):'';
+    $('kabSel').value='';$('monthSel').value='';$('yearSel').value=state.year;$('frSel').value=state.fr;
+    confOn.fill(true);document.querySelectorAll('#confChips .chip').forEach(b=>b.setAttribute('aria-pressed','true'));
+    map.closePopup();$('detail').innerHTML='<div class="empty">Klik salah satu sel grid di peta untuk melihat detailnya.</div>';
+    refresh();fitRegion();
+  });
+}
+
+/* ===== Muat data ===== */
+async function loadJSON(url,required){
+  try{const r=await fetch(url);if(!r.ok)throw Error(url+' ('+r.status+')');return await r.json()}
+  catch(e){if(required)throw e;console.warn('Gagal memuat',url,e);return null}
+}
+buildControls();
+Promise.all([loadJSON(FILES.grid,true),loadJSON(FILES.kab,false),loadJSON(FILES.fire,false),loadJSON(FILES.enso,false)]).then(([grid,admin,fire,enso])=>{
+  G=grid.features;G.forEach((f,i)=>{f._i=i;gIdx.set(f.properties.g,i)});
+  ENSO=enso||{};T=fire&&fire.x?fire:null;
+  const names=[...new Set(G.map(f=>f.properties.kab))].sort((a,b)=>a.localeCompare(b,'id'));
+  names.forEach(n=>$('kabSel').add(new Option(n,n)));
+  if(T){
+    fc=Int32Array.from(T.g,g=>gIdx.has(g)?gIdx.get(g):-1);
+    const ys=[...new Set(T.th)].sort((a,b)=>a-b);ys.forEach(y=>$('yearSel').add(new Option(y,y)));
+    state.year=String(ys[ys.length-1]);$('yearSel').value=state.year;
+    const d=new Date(T.tgl_akhir+'T00:00:00');
+    $('dataNote').innerHTML='<b>'+fmt(T.n)+'</b> titik api 2014–2026<br>data s.d. '+d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  }else{
+    $('dataNote').textContent='Data titik api tidak termuat';
+    ['yearSel','monthSel','fireChk'].forEach(id=>$(id).disabled=true);$('fireChk').checked=false;showFire=false;
+    $('detail').insertAdjacentHTML('beforebegin','<div class="err" style="margin-bottom:10px">File <code>data/titik_api.json</code> tidak ditemukan atau rusak, sehingga titik api dan grafiknya tidak tampil.</div>');
+  }
+  gridLayer=L.geoJSON(grid,{renderer:R,style:gridStyle,onEachFeature:(f,l)=>{l.on('click',onCellClick);l.on('mouseover',()=>{if(f.properties.g!==selG&&inKab(f.properties))l.setStyle({color:'#111',weight:1.6,opacity:1})});l.on('mouseout',()=>l.setStyle(gridStyle(f)))}}).addTo(map);
+  gridLayer.bindTooltip(l=>cellTip(l.feature),{sticky:true,direction:'top',opacity:.97});
+  if(admin){adminLayer=L.geoJSON(admin,{renderer:R,interactive:false,style:{color:'#14281c',weight:1.3,fill:false,opacity:.85}}).addTo(map);}
+  initCharts();
+  $('loading').remove();
+  refresh();fitRegion();
+}).catch(err=>{
+  $('loading').innerHTML='<div class="err" style="max-width:440px"><b>Data grid gagal dimuat.</b><br>'+esc(err.message)+'<br><br>Pastikan <code>data/grid.geojson</code> ada dan halaman dibuka lewat server (GitHub Pages atau <code>python -m http.server</code>), bukan langsung dari file.</div>';
+});
+</script>
+</body>
+</html>
