@@ -51,7 +51,7 @@ select:hover{border-color:#8b9384}
 .kpi b{display:block;font-size:22px;line-height:1.15;color:var(--green)}
 .kpi span{display:block;font-size:12px;color:var(--muted);line-height:1.3;margin-top:2px}
 .chartbox{position:relative;margin:4px 0 6px}
-.cb-year{height:215px}.cb-month{height:175px}.cb-kab{height:300px}.cb-cell{height:150px}
+.cb-impm{height:185px}.cb-year{height:215px}.cb-month{height:175px}.cb-kab{height:300px}.cb-cell{height:150px}
 .note{font-size:12.5px;color:#4a5147}
 .note p{margin:6px 0}
 details summary{cursor:pointer;font-weight:650;color:var(--green2)}
@@ -65,6 +65,7 @@ details summary{cursor:pointer;font-weight:650;color:var(--green2)}
 .dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:8px 0}
 .dgrid div{padding:7px 9px;border:1px solid #e6e9df;border-radius:8px;background:#f9faf6;font-size:12px;color:var(--muted)}
 .dgrid b{display:block;font-size:14px;color:var(--ink)}
+.alert{padding:8px 10px;border-radius:8px;background:#f4eefa;border:1px solid #d8cce6;font-size:12.5px;margin:6px 0}
 .empty{padding:14px;text-align:center;color:var(--muted);border:1px dashed #c9cdc2;border-radius:10px;font-size:13px}
 .err{padding:10px;border-radius:9px;background:#fff2ef;border:1px solid #f1c7bd;color:#8a2a1c;font-size:12.5px}
 /* overlay peta */
@@ -107,7 +108,7 @@ details summary{cursor:pointer;font-weight:650;color:var(--green2)}
 </head>
 <body>
 <header>
-  <div><h1>WebGIS Pemantauan Kebakaran Hutan dan Lahan · Provinsi Riau</h1><p>Monitoring titik api, kerentanan, bahaya bulanan, dan Drought Code</p></div>
+  <div><h1>WebGIS Pemantauan Kebakaran Hutan dan Lahan · Provinsi Riau</h1><p>Monitoring titik api, kerentanan, bahaya bulanan, Drought Code, dan dampak ke penduduk</p></div>
   <div id="dataNote">Memuat data…</div>
 </header>
 <div id="app">
@@ -146,14 +147,26 @@ details summary{cursor:pointer;font-weight:650;color:var(--green2)}
   <h2 id="h-kpi">3 · Ringkasan (mengikuti filter)</h2>
   <div class="kpis">
     <div class="kpi"><b id="kFire">–</b><span>Titik api sesuai filter</span></div>
+    <div class="kpi"><b id="kPop">–</b><span>Total penduduk 2026 (jiwa)</span></div>
     <div class="kpi"><b id="kBurn">–</b><span>Sel pernah terbakar (MODIS 2014–2026)</span></div>
+    <div class="kpi"><b id="kExpo">–</b><span id="kExpoL">Penduduk di sel bahaya tinggi</span></div>
     <div class="kpi"><b id="kVul">–</b><span>Sel kerentanan tinggi (kelas 4–5)</span></div>
     <div class="kpi"><b id="kHigh">–</b><span id="kHighL">Sel bahaya tinggi (kelas 4–5)</span></div>
   </div>
 </section>
 
+<section class="card" aria-labelledby="h-impact">
+  <h2 id="h-impact">4 · Dampak ke penduduk</h2>
+  <p class="hint" style="margin:-2px 0 6px">Penduduk yang tinggal di sel berbahaya tinggi (kelas 4–5). Klik batang untuk memilih bulan atau kabupaten.</p>
+  <h3 style="margin-top:4px">Penduduk di sel bahaya tinggi per bulan 2026</h3>
+  <div class="chartbox cb-impm"><canvas id="impMonthChart" aria-label="Penduduk di sel bahaya tinggi per bulan"></canvas></div>
+  <h3 id="impKabTitle">Per kabupaten/kota</h3>
+  <div class="chartbox cb-kab"><canvas id="impKabChart" aria-label="Penduduk di sel bahaya tinggi per kabupaten"></canvas></div>
+  <p class="hint">Angka adalah perkiraan penduduk yang berada di sel berbahaya, bukan jumlah korban. Sel tanpa data bahaya tidak dihitung.</p>
+</section>
+
 <section class="card" aria-labelledby="h-chart">
-  <h2 id="h-chart">4 · Grafik titik api</h2>
+  <h2 id="h-chart">5 · Grafik titik api</h2>
   <p class="hint" style="margin:-2px 0 6px">Klik batang untuk memfilter tahun, bulan, atau kabupaten. Klik lagi untuk melepas.</p>
   <h3 style="margin-top:4px">Per tahun &amp; anomali ENSO</h3>
   <div class="chartbox cb-year"><canvas id="yearChart" aria-label="Grafik titik api per tahun"></canvas></div>
@@ -164,7 +177,7 @@ details summary{cursor:pointer;font-weight:650;color:var(--green2)}
 </section>
 
 <section class="card" aria-labelledby="h-detail">
-  <h2 id="h-detail">5 · Detail sel grid</h2>
+  <h2 id="h-detail">6 · Detail sel grid</h2>
   <div id="detail"><div class="empty">Klik salah satu sel grid di peta untuk melihat detailnya.</div></div>
 </section>
 
@@ -176,7 +189,7 @@ details summary{cursor:pointer;font-weight:650;color:var(--green2)}
     <p><b>Riwayat terbakar:</b> dihitung dari raster MODIS Burned Area 2014–2026 (500 m): persentase piksel terbakar di tiap sel dan tahun terbakar terakhir.</p>
     <p><b>Titik api:</b> sebaran hotspot Riau 2014–2026 (MODIS, NOAA-20, NOAA-21) per kabupaten, kecamatan, dan desa. Tiap titik dihubungkan ke sel grid tempat ia jatuh.</p>
     <p><b>ENSO:</b> anomali ONI NOAA, rata-rata musim JAS dan ASO tiap tahun.</p>
-    <p>Layer populasi tidak ditampilkan karena datanya belum tersedia.</p>
+    <p><b>Penduduk:</b> perkiraan penduduk 2026 per sel 5 × 5 km (total sekitar 6,78 juta jiwa). &ldquo;Penduduk di sel bahaya tinggi&rdquo; adalah jumlah penduduk di sel dengan kelas bahaya 4–5 pada bulan terpilih. Penduduk di sel yang tidak punya data bahaya (sekitar 415 ribu jiwa) tidak ikut dihitung sebagai terpapar.</p>
   </details>
 </section>
 </aside>
@@ -203,6 +216,8 @@ const CLS=['Sangat rendah','Rendah','Sedang','Tinggi','Sangat tinggi'];
 const PAL=['#ffefb0','#fdbf6f','#f46d43','#d73027','#7f0000'];
 const FRPAL=['#2166ac','#93b7d6','#f2f2f2','#f0a77a','#e66101'];
 const NEUTRAL='#c4c8bc';
+const POPPAL=['#f1e8f4','#cdb9dc','#a487c1','#75569d','#422b65'];
+const POPL=['≤ 100','100–500','500–2.000','2.000–10.000','> 10.000'];
 const FR=[['fr_tutup','Tutupan lahan'],['fr_ubah','Perubahan tutupan lahan'],['fr_ndmi','NDMI'],['fr_gambut','Gambut'],['fr_feg','FEG'],['fr_kanal','Kanal'],['fr_soc','SOC'],['fr_jalan','Jarak jalan'],['fr_sungai','Jarak sungai'],['fr_mukim','Jarak permukiman'],['fr_slope','Kemiringan lereng'],['fr_elev','Elevasi']];
 const MODES=[
  ['rentan','Kerentanan','Kelas kerentanan 1–5 dari analisis Frequency Ratio (FR). Makin tinggi, makin rentan terbakar.'],
@@ -210,6 +225,8 @@ const MODES=[
  ['dc','Drought Code','Kelas Drought Code per bulan (2026) hasil reklasifikasi. Diasumsikan makin tinggi kelas, makin kering.'],
  ['burn','Riwayat terbakar','Persentase luas sel yang pernah terbakar pada 2014–2026 menurut MODIS Burned Area.'],
  ['dens','Kepadatan titik api','Jumlah titik api per sel grid, mengikuti filter tahun, bulan, kabupaten, dan kepercayaan.'],
+ ['pop','Populasi','Perkiraan jumlah penduduk 2026 per sel grid 5 × 5 km.'],
+ ['expo','Dampak penduduk','Penduduk yang tinggal di sel berbahaya tinggi (kelas 4–5) pada bulan terpilih. Sel lain diredam. Geser bulan untuk melihat perubahannya.'],
  ['fr','Parameter FR','Nilai Frequency Ratio tiap parameter. Di atas 1 berarti parameter itu meningkatkan peluang terbakar.']
 ];
 const $=id=>document.getElementById(id);
@@ -228,11 +245,23 @@ let gridLayer,adminLayer,fireGroup,cellChart,yearChart,monthChart,kabChart,gIdx=
 const R=L.canvas({padding:.4,tolerance:5});
 const map=L.map('map',{renderer:R,zoomSnap:.25,minZoom:6}).setView([0.55,101.9],7.5);
 const base={
- 'Peta terang':L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}),
  'OpenStreetMap':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}),
  'Citra satelit':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles &copy; Esri'})
 };
-base['Peta terang'].addTo(map);
+base['OpenStreetMap'].addTo(map);
+/* Pengaman: bila tile gagal dimuat (diblokir jaringan/Referer), pindah otomatis ke peta dasar berikutnya */
+(function(){
+  const names=Object.keys(base);let cur=0,err=0,ok=0;
+  names.forEach((n,i)=>{
+    base[n].on('tileload',()=>{if(i===cur)ok++});
+    base[n].on('tileerror',()=>{
+      if(i!==cur||ok>0)return;
+      if(++err<4)return;
+      err=0;map.removeLayer(base[n]);cur=(cur+1)%names.length;base[names[cur]].addTo(map);
+      const t=$('fireNote');t.textContent='Peta dasar "'+n+'" tidak bisa dimuat, dialihkan ke "'+names[cur]+'". Anda juga bisa memilihnya lewat ikon lapisan di kanan atas.';t.style.display='block';setTimeout(()=>{if(t.textContent.startsWith('Peta dasar'))t.style.display='none'},9000);
+    });
+  });
+})();
 L.control.layers(base,null,{position:'topright',collapsed:true}).addTo(map);
 L.control.scale({imperial:false,position:'bottomleft'}).addTo(map);
 fireGroup=L.layerGroup().addTo(map);
@@ -244,6 +273,7 @@ const dcv=p=>num(p['dc_'+pad(state.hm)]);
 const frv=(p,k)=>num(p[k]);
 function frKey(v){return v===null?'nd':v<.8?0:v<.95?1:v<1.05?2:v<1.2?3:4}
 function burnKey(p){const b=num(p.bk);return b===null?'nd':b<=0?'n':b<=5?0:b<=20?1:b<=50?2:b<=80?3:4}
+function popKey(v){v=num(v);return v===null?'nd':v<=100?0:v<=500?1:v<=2000?2:v<=10000?3:4}
 function densKey(i){const c=counts[i];if(!c)return 'n';let k=dBreaks.findIndex(b=>c<=b);return k<0?dBreaks.length:k}
 function cellKey(p,i){
   switch(state.mode){
@@ -252,6 +282,8 @@ function cellKey(p,i){
     case 'dc':{const v=dcv(p);return v>=1&&v<=5?v-1:'nd'}
     case 'burn':return burnKey(p);
     case 'dens':return densKey(i);
+    case 'pop':return popKey(p.pop);
+    case 'expo':{const h=hz(p);if(h===null)return 'nd';return h<4?'n':popKey(p.pop)}
     default:return frKey(frv(p,state.fr));
   }
 }
@@ -261,6 +293,8 @@ function legendDef(){
   if(m==='bahaya')return{title:'Bahaya · '+MONTHS[state.hm-1]+' 2026',items:[...PAL.map((c,k)=>({key:k,color:c,label:(k+1)+' · '+CLS[k]})),nd]};
   if(m==='dc')return{title:'Drought Code · '+MONTHS[state.hm-1]+' 2026',items:[...PAL.map((c,k)=>({key:k,color:c,label:'Kelas '+(k+1)})),nd]};
   if(m==='burn'){const lb=['≤ 5 %','5–20 %','20–50 %','50–80 %','> 80 %'];return{title:'Luas sel yang pernah terbakar',items:[{key:'n',color:'#eceee6',label:'Tidak terbakar'},...PAL.map((c,k)=>({key:k,color:c,label:lb[k]})),nd]}}
+  if(m==='pop')return{title:'Penduduk per sel (jiwa)',items:POPPAL.map((c,k)=>({key:k,color:c,label:POPL[k]}))};
+  if(m==='expo')return{title:'Penduduk di sel bahaya tinggi · '+MONTHS[state.hm-1]+' 2026',items:[{key:'n',color:'#eceee6',label:'Bahaya rendah–sedang'},...POPPAL.map((c,k)=>({key:k,color:c,label:POPL[k]+' jiwa'})),nd]};
   if(m==='dens'){
     const items=[{key:'n',color:'#eceee6',label:'Tidak ada titik'}],nb=dBreaks.length;
     if(!nb){const mx=Math.max(...counts);if(mx>0)items.push({key:0,color:PAL[2],label:(mx===1?'1':'1–'+mx)+' titik'});return{title:'Titik api per sel',items}}
@@ -276,6 +310,8 @@ function modeValueText(p,i){
   if(m==='dc')return 'Kelas '+(k+1);
   if(m==='burn')return k==='n'?'Tidak terbakar':fmt(p.bk,1)+' % terbakar';
   if(m==='dens')return fmt(counts[i])+' titik api';
+  if(m==='pop')return fmt(p.pop)+' jiwa';
+  if(m==='expo')return k==='n'?'Bahaya rendah–sedang':fmt(p.pop)+' jiwa di sel bahaya tinggi';
   return fmt(frv(p,state.fr),2);
 }
 const modeName=()=>MODES.find(x=>x[0]===state.mode)[1];
@@ -324,7 +360,7 @@ function cellTip(f){
 function cellFireCount(i,all){let n=0;if(!T)return 0;if(all){for(let j=0;j<T.n;j++)if(fc[j]===i)n++}else for(const j of activeIdx)if(fc[j]===i)n++;return n}
 function cellHtmlRows(f){
   const p=f.properties,k=num(p.rentan),h=hz(p),d=dcv(p);
-  return [['Kerentanan',k?'Kelas '+k+' ('+CLS[k-1]+')':'–'],['Bahaya '+MONTHS[state.hm-1],h?'Kelas '+h+' ('+CLS[h-1]+')':'–'],['Drought Code '+MS[state.hm-1],d?'Kelas '+d:'–'],['Luas pernah terbakar',num(p.bk)===null?'–':fmt(p.bk,1)+' %'],['Terbakar terakhir',p.by||'–'],['Titik api (filter)',fmt(cellFireCount(f._i,false))]];
+  return [['Kerentanan',k?'Kelas '+k+' ('+CLS[k-1]+')':'–'],['Bahaya '+MONTHS[state.hm-1],h?'Kelas '+h+' ('+CLS[h-1]+')':'–'],['Drought Code '+MS[state.hm-1],d?'Kelas '+d:'–'],['Luas pernah terbakar',num(p.bk)===null?'–':fmt(p.bk,1)+' %'],['Terbakar terakhir',p.by||'–'],['Penduduk 2026',fmt(p.pop)+' jiwa'],['Titik api (filter)',fmt(cellFireCount(f._i,false))]];
 }
 function onCellClick(e){
   const f=e.target.feature;
@@ -340,7 +376,7 @@ function showCell(f){
   const bars=FR.map(([key,label])=>{const v=frv(p,key);return '<div class="bar"><span>'+esc(label)+'</span><span class="tr">'+(v===null?'':'<i style="width:'+Math.max(2,Math.min(100,(v-.5)/1*100))+'%;background:'+frColor(v)+'"></i>')+'</span><span>'+(v===null?'–':fmt(v,2))+'</span></div>'}).join('');
   box.innerHTML='<b style="font-size:15px">Sel '+esc(p.g)+' · '+esc(p.kab)+'</b>'+
    '<div style="margin:7px 0"><span class="pill" style="background:'+(k?PAL[k-1]:NEUTRAL)+';color:'+(k&&k<3?'#3d2a00':'#fff')+'">Kerentanan '+(k?k+' · '+CLS[k-1]:'–')+'</span></div>'+
-   '<div class="dgrid"><div>Indeks FR<b>'+fmt(p.indeks,2)+'</b></div><div>Luas pernah terbakar<b>'+(num(p.bk)===null?'–':fmt(p.bk,1)+' %')+'</b></div><div>Terbakar terakhir<b>'+esc(p.by||'–')+'</b></div><div>Titik api<b>'+fmt(cellFireCount(f._i,false))+' (filter) · '+fmt(cellFireCount(f._i,true))+' (total)</b></div></div>'+
+   (()=>{const h=hz(p),pp=num(p.pop)||0;return h>=4&&pp>0?'<div class="alert">Pada '+MONTHS[state.hm-1]+' sel ini berbahaya tinggi (kelas '+h+'). Sekitar <b>'+fmt(pp)+' jiwa</b> tinggal di sini.</div>':''})()+'<div class="dgrid"><div>Penduduk 2026<b>'+fmt(p.pop)+' jiwa</b></div><div>Bahaya '+MONTHS[state.hm-1]+'<b>'+(hz(p)?'Kelas '+hz(p)+' ('+CLS[hz(p)-1]+')':'Tanpa data')+'</b></div><div>Indeks FR<b>'+fmt(p.indeks,2)+'</b></div><div>Luas pernah terbakar<b>'+(num(p.bk)===null?'–':fmt(p.bk,1)+' %')+'</b></div><div>Terbakar terakhir<b>'+esc(p.by||'–')+'</b></div><div>Titik api<b>'+fmt(cellFireCount(f._i,false))+' (filter) · '+fmt(cellFireCount(f._i,true))+' (total)</b></div></div>'+
    '<h3>Bahaya &amp; Drought Code Januari–September 2026</h3><div class="chartbox cb-cell"><canvas id="cellChart"></canvas></div>'+
    '<h3>Nilai FR per parameter <span style="font-weight:400;color:#5a6157">(garis tengah = 1,0)</span></h3><div class="bars">'+bars+'</div>';
   const hzv=[],dcs=[];for(let m=1;m<=NHAZ;m++){hzv.push(num(p['bhy_'+pad(m)]));dcs.push(num(p['dc_'+pad(m)]))}
@@ -363,14 +399,15 @@ function renderLegend(){
 
 /* ===== KPI & judul ===== */
 function renderKpis(){
-  let burn=0,vul=0,hi=0;
-  for(const f of G){const p=f.properties;if(!inKab(p))continue;if((num(p.bk)||0)>0)burn++;if((num(p.rentan)||0)>=4)vul++;if((hz(p)||0)>=4)hi++}
-  $('kFire').textContent=T?fmt(activeIdx.length):'–';$('kBurn').textContent=fmt(burn);$('kVul').textContent=fmt(vul);$('kHigh').textContent=fmt(hi);
+  let burn=0,vul=0,hi=0,pop=0,expo=0;
+  for(const f of G){const p=f.properties;if(!inKab(p))continue;const pp=num(p.pop)||0;pop+=pp;if((num(p.bk)||0)>0)burn++;if((num(p.rentan)||0)>=4)vul++;if((hz(p)||0)>=4){hi++;expo+=pp}}
+  $('kFire').textContent=T?fmt(activeIdx.length):'–';$('kPop').textContent=fmt(pop);$('kBurn').textContent=fmt(burn);$('kVul').textContent=fmt(vul);$('kHigh').textContent=fmt(hi);$('kExpo').textContent=fmt(expo);
   $('kHighL').textContent='Sel bahaya tinggi, '+MONTHS[state.hm-1]+' 2026';
+  $('kExpoL').textContent='Penduduk di sel bahaya tinggi, '+MONTHS[state.hm-1];
 }
 function renderTitle(){
   const wil=state.kab||'Seluruh Riau';
-  let t=modeName();if(state.mode==='bahaya'||state.mode==='dc')t+=' · '+MONTHS[state.hm-1]+' 2026';
+  let t=modeName();if(state.mode==='bahaya'||state.mode==='dc'||state.mode==='expo')t+=' · '+MONTHS[state.hm-1]+' 2026';
   let f='';
   if(T&&showFire)f='Titik api: '+(state.year||'semua tahun')+' · '+(state.month?MONTHS[state.month-1]:'semua bulan')+' · '+fmt(activeIdx.length)+' titik';
   else f='Titik api disembunyikan';
@@ -409,6 +446,30 @@ function initCharts(){
   kabChart=new Chart($('kabChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:'#b86a2e'}]},options:{...CH,indexAxis:'y',onHover:pointer,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{ticks:{font:{size:11}}}},onClick:(e,els)=>{if(!els.length)return;const n=kabChart.data.labels[els[0].index];setKab(state.kab===n?'':n)}}});
 }
 
+/* ===== Grafik dampak penduduk ===== */
+let impMonthChart,impKabChart;
+const shortNum=v=>v>=1e6?(v/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})+' jt':v>=1e3?(v/1e3).toLocaleString('id-ID',{maximumFractionDigits:0})+' rb':String(v);
+function initImpact(){
+  if(!window.Chart)return;
+  impMonthChart=new Chart($('impMonthChart'),{type:'bar',data:{labels:MS.slice(0,NHAZ),datasets:[{data:[],backgroundColor:'#75569d'}]},options:{...CH,onHover:pointer,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.y)+' jiwa'}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>shortNum(v)},title:{display:true,text:'Jiwa'}},x:{ticks:{font:{size:10}}}},onClick:(e,els)=>{if(!els.length)return;state.hm=els[0].index+1;refresh()}}});
+  impKabChart=new Chart($('impKabChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:'#75569d'}]},options:{...CH,indexAxis:'y',onHover:pointer,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.parsed.x)+' jiwa ('+fmt((impKabChart._share||[])[c.dataIndex]||0,1)+' % dari penduduk wilayah ini)'}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>shortNum(v)}},y:{ticks:{font:{size:11}}}},onClick:(e,els)=>{if(!els.length)return;const n=impKabChart.data.labels[els[0].index];setKab(state.kab===n?'':n)}}});
+}
+function drawImpact(){
+  if(!impMonthChart)return;
+  const bm=new Array(NHAZ).fill(0),kT={},kE={},hk='bhy_'+pad(state.hm);
+  for(const f of G){const p=f.properties,pp=num(p.pop)||0;kT[p.kab]=(kT[p.kab]||0)+pp;if((num(p[hk])||0)>=4)kE[p.kab]=(kE[p.kab]||0)+pp;
+    if(inKab(p))for(let m=1;m<=NHAZ;m++)if((num(p['bhy_'+pad(m)])||0)>=4)bm[m-1]+=pp}
+  impMonthChart.data.datasets[0].data=bm;
+  impMonthChart.data.datasets[0].backgroundColor=MS.slice(0,NHAZ).map((_,i)=>i+1===state.hm?'#422b65':'#c3b2d6');
+  impMonthChart.update();
+  const names=Object.keys(kT).sort((a,b)=>(kE[b]||0)-(kE[a]||0));
+  impKabChart.data.labels=names;impKabChart.data.datasets[0].data=names.map(n=>kE[n]||0);
+  impKabChart._share=names.map(n=>kT[n]?100*(kE[n]||0)/kT[n]:0);
+  impKabChart.data.datasets[0].backgroundColor=names.map(n=>state.kab?(n===state.kab?'#422b65':'#d8cce6'):'#75569d');
+  impKabChart.update();
+  $('impKabTitle').textContent='Per kabupaten/kota · '+MONTHS[state.hm-1]+' 2026';
+}
+
 /* ===== Refresh ===== */
 function computeDens(){
   counts=new Int32Array(G.length);
@@ -426,8 +487,8 @@ function refresh(){
   gridLayer.eachLayer(l=>l.setStyle(gridStyle(l.feature)));
   const fk=[state.year,state.month,state.kab,confOn.join(),showFire].join('|');
   if(fk!==fireKey){fireKey=fk;drawFires()}
-  renderKpis();renderTitle();drawCharts();
-  $('hazBox').hidden=!(state.mode==='bahaya'||state.mode==='dc');
+  renderKpis();renderTitle();drawCharts();drawImpact();
+  $('hazBox').hidden=!(state.mode==='bahaya'||state.mode==='dc'||state.mode==='expo');
   $('frBox').hidden=state.mode!=='fr';
   document.querySelectorAll('#modeChips .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===state.mode));
   $('modeDesc').textContent=MODES.find(x=>x[0]===state.mode)[2];
@@ -436,7 +497,7 @@ function refresh(){
 function setYear(v){state.year=v;$('yearSel').value=v;refresh()}
 function setMonth(v){state.month=v;$('monthSel').value=v;refresh()}
 function setKab(v){state.kab=v;$('kabSel').value=v;refresh();fitRegion()}
-function setMode(m){state.mode=m;off=new Set();if(m!=='bahaya'&&m!=='dc')stopPlay();refresh()}
+function setMode(m){state.mode=m;off=new Set();if(m!=='bahaya'&&m!=='dc'&&m!=='expo')stopPlay();refresh()}
 function fitRegion(){
   let b=null;
   if(state.kab&&adminLayer)adminLayer.eachLayer(l=>{if(l.feature.properties.kab===state.kab)b=l.getBounds()});
@@ -501,7 +562,8 @@ Promise.all([loadJSON(FILES.grid,true),loadJSON(FILES.kab,false),loadJSON(FILES.
   gridLayer=L.geoJSON(grid,{renderer:R,style:gridStyle,onEachFeature:(f,l)=>{l.on('click',onCellClick);l.on('mouseover',()=>{if(f.properties.g!==selG&&inKab(f.properties))l.setStyle({color:'#111',weight:1.6,opacity:1})});l.on('mouseout',()=>l.setStyle(gridStyle(f)))}}).addTo(map);
   gridLayer.bindTooltip(l=>cellTip(l.feature),{sticky:true,direction:'top',opacity:.97});
   if(admin){adminLayer=L.geoJSON(admin,{renderer:R,interactive:false,style:{color:'#14281c',weight:1.3,fill:false,opacity:.85}}).addTo(map);}
-  initCharts();
+  if(window.Chart){Chart.defaults.font.size=11;Chart.defaults.color='#4a5147'}
+  initCharts();initImpact();
   $('loading').remove();
   refresh();fitRegion();
 }).catch(err=>{
